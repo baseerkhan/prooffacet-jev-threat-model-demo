@@ -191,6 +191,10 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
     return json(response, 200, {
       softwareTwin,
       threatCatalog,
+      questionPayloads: buildQuestions(),
+      requestStates: Object.fromEntries(
+        softwareTwin.flows.map((flow) => [flow.id, buildState(flow.id)]),
+      ),
       catalogVersion: threatCatalogVersion,
       methodology: {
         jev: "18 independent Noul applicability judgments batched over one versioned flow state.",

@@ -86,7 +86,27 @@ function updateFlowDescription() {
     : "Choose a documented flow.";
 }
 
-function decisionCell(decision, showProbability = false) {
+function closePayload() {
+  $("#payload-backdrop").hidden = true;
+  $("#payload-drawer").hidden = true;
+  document.body.classList.remove("drawer-open");
+}
+
+function openPayload(decision, payload) {
+  const selectedState = state.context?.requestStates?.[state.evaluation?.selectedFlowId];
+  $("#payload-title").textContent = `${decision.threatId} · ${decision.threatName}`;
+  $("#payload-json").textContent = JSON.stringify({
+    model: state.evaluation?.jev?.providerVersion || "jev-latest",
+    state: selectedState,
+    questions: { [decision.threatId]: payload },
+  }, null, 2);
+  $("#payload-backdrop").hidden = false;
+  $("#payload-drawer").hidden = false;
+  document.body.classList.add("drawer-open");
+  $("#payload-close").focus();
+}
+
+function decisionCell(decision, showProbability = false, payload = null) {
   const wrapper = element("div");
   const pill = element(
     "span",
@@ -96,6 +116,12 @@ function decisionCell(decision, showProbability = false) {
   wrapper.append(pill);
   if (showProbability && decision.probability !== null) {
     wrapper.append(element("span", "probability", `${Math.round(decision.probability * 100)}% probability of yes`));
+  }
+  if (payload) {
+    const trigger = element("button", "payload-trigger", "View Noul payload");
+    trigger.type = "button";
+    trigger.addEventListener("click", () => openPayload(decision, payload));
+    wrapper.append(trigger);
   }
   return wrapper;
 }
@@ -128,7 +154,7 @@ function renderEvaluation(record) {
     const ruleCell = element("td");
     ruleCell.append(decisionCell(rule));
     const jevCell = element("td");
-    jevCell.append(decisionCell(jev, true));
+    jevCell.append(decisionCell(jev, true, state.context?.questionPayloads?.[jev.threatId]));
     const evidence = element("td");
     evidence.append(element("span", "", rule.evidenceFactIds.length
       ? `${rule.evidenceFactIds.length} rule fact${rule.evidenceFactIds.length === 1 ? "" : "s"} · versioned state`
@@ -196,4 +222,9 @@ async function init() {
 $("#flow-select").addEventListener("change", updateFlowDescription);
 $("#evaluate-button").addEventListener("click", evaluate);
 $("#review-form").addEventListener("submit", review);
+$("#payload-close").addEventListener("click", closePayload);
+$("#payload-backdrop").addEventListener("click", closePayload);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !$("#payload-drawer").hidden) closePayload();
+});
 void init();

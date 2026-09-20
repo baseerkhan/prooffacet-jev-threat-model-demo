@@ -6,7 +6,7 @@
     <meta name="description" content="A public ProofFacet experiment comparing bounded Jev threat triage with deterministic rules and human review.">
     <title>Jev Threat Triage · ProofFacet</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20260920-2">
   </head>
   <body>
     <header class="site-header">
@@ -52,12 +52,11 @@
       </section>
 
       <section class="section wrap" id="twin">
-        <div class="section-heading split-heading">
+        <div class="section-heading">
           <div>
             <p class="kicker">SOFTWARETWIN™ · BASELINE SHA <span id="short-sha">—</span></p>
-            <h2>The application, reduced to the facts that change the decision.</h2>
+            <h2>The application setup</h2>
           </div>
-          <p>Every fact links back to source. Unknown deployment controls remain unknown; they are not silently treated as protections.</p>
         </div>
 
         <div class="architecture" role="img" aria-label="Architecture diagram from learner browser to Streamlit, tool API, model provider, and workbook store">
@@ -83,12 +82,11 @@
 
       <section class="section workbench-section" id="run">
         <div class="wrap">
-          <div class="section-heading workbench-heading">
+          <div class="section-heading">
             <div>
               <p class="kicker">LIVE COMPARISON</p>
-              <h2>Same flow. Same catalog. Different decision machinery.</h2>
+              <h2>Run Live Comparison</h2>
             </div>
-            <p>Choose a documented flow. The server runs exact rules first, then sends one batched typed request to Jev. No API key reaches this page.</p>
           </div>
 
           <div class="run-panel">
@@ -161,15 +159,6 @@
           <article><span>03</span><h3>Escalate</h3><p>Probabilities from 0.35 to 0.65 remain uncertain. Material findings require a person.</p></article>
           <article><span>04</span><h3>Release</h3><p>Export state, versions, timings, judgments, sources, and human authority together.</p></article>
         </div>
-        <div class="limitations">
-          <h3>Deliberate limitations</h3>
-          <ul>
-            <li>Applicability is not exploitability and does not replace security testing.</li>
-            <li>The conventional generative-LLM path is excluded, so no LLM speed claim is made.</li>
-            <li>The deterministic baseline is intentionally small and transparent, not a commercial scanner.</li>
-            <li>One observed run is a demo measurement, not a general benchmark.</li>
-          </ul>
-        </div>
       </section>
 
       <section class="sources-section">
@@ -180,9 +169,23 @@
       </section>
     </main>
 
+    <div class="payload-backdrop" id="payload-backdrop" hidden></div>
+    <aside class="payload-drawer" id="payload-drawer" role="dialog" aria-modal="true" aria-labelledby="payload-title" hidden>
+      <div class="payload-drawer-header">
+        <div>
+          <p class="kicker">JEV JUDGMENT · NOUL PAYLOAD</p>
+          <h2 id="payload-title">Noul request</h2>
+        </div>
+        <button class="payload-close" id="payload-close" type="button" aria-label="Close Noul payload">Close ×</button>
+      </div>
+      <p class="payload-explainer">This is the exact Noul question and versioned SoftwareTwin state used for this judgment. It was sent with 17 other Noul questions in one server-side batch.</p>
+      <div class="payload-command"><span>SDK CALL</span><code>TypeSafeClient.systemOne({ state, questions, model })</code></div>
+      <pre id="payload-json"></pre>
+    </aside>
+
     <footer>
       <div class="wrap footer-inner"><span>ProofFacet experiment · Evidence before assertion.</span><span>© 2026 NextRun Digital</span></div>
     </footer>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=20260920-2"></script>
   </body>
 </html>
