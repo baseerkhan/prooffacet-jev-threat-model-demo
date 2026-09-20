@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -30,6 +30,23 @@ test("evaluation storage persists records and human review", async () => {
     });
     assert.equal(reviewed?.humanReview?.action, "approved");
     assert.equal((await store.get(record.id))?.humanReview?.reviewer, "Test reviewer");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("evaluation storage caps retained demo records", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "prooffacet-jev-cap-test-"));
+  try {
+    const store = new EvaluationStore(directory, 2);
+    for (const prefix of ["1", "2", "3"]) {
+      await store.save({
+        ...record,
+        id: `${prefix.repeat(8)}-${prefix.repeat(4)}-4${prefix.repeat(3)}-8${prefix.repeat(3)}-${prefix.repeat(12)}`,
+      });
+    }
+    const files = (await readdir(join(directory, "evaluations"))).filter((name) => name.endsWith(".json"));
+    assert.equal(files.length, 2);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

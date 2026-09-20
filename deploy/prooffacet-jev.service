@@ -12,6 +12,7 @@ EnvironmentFile=/etc/prooffacet-jev/prooffacet-jev.env
 Environment=HOST=127.0.0.1
 Environment=PORT=8790
 Environment=PROOFFACET_DATA_DIR=/var/lib/prooffacet-jev
+Environment=PROOFFACET_MAX_RECORDS=250
 ExecStart=/usr/local/bin/node /opt/prooffacet-jev/current/dist/server.js
 Restart=on-failure
 RestartSec=3

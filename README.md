@@ -38,7 +38,7 @@ Noul values from `0.35` through `0.65` are displayed as uncertain. This is an ex
 - `POST /api/evaluations/:id/review`
 - `GET /api/evaluations/:id/evidence-pack`
 
-Evaluation artifacts are written atomically below `data/evaluations/` and are excluded from Git. Only one Jev evaluation runs at a time; up to five requests may wait in memory.
+Evaluation artifacts are written atomically below `data/evaluations/` and are excluded from Git. Only one Jev evaluation runs at a time; up to five requests may wait in memory. The public endpoint allows three evaluations per client per ten minutes, and storage retains at most 250 records by default.
 
 ## Claim boundary
 

@@ -1,12 +1,14 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { EvaluationRecord, HumanReview } from "./types.js";
 
 export class EvaluationStore {
   readonly #directory: string;
+  readonly #maxRecords: number;
 
-  constructor(directory: string) {
+  constructor(directory: string, maxRecords = 250) {
     this.#directory = join(directory, "evaluations");
+    this.#maxRecords = Math.max(1, Math.min(maxRecords, 2_000));
   }
 
   async save(record: EvaluationRecord): Promise<void> {
@@ -18,6 +20,7 @@ export class EvaluationStore {
       mode: 0o640,
     });
     await rename(temporary, destination);
+    await this.#removeOldestRecords();
   }
 
   async get(id: string): Promise<EvaluationRecord | null> {
@@ -40,5 +43,19 @@ export class EvaluationStore {
 
   #path(id: string): string {
     return join(this.#directory, `${id}.json`);
+  }
+
+  async #removeOldestRecords(): Promise<void> {
+    const entries = (await readdir(this.#directory))
+      .filter((name) => /^[a-f0-9-]{36}\.json$/.test(name));
+    if (entries.length <= this.#maxRecords) return;
+    const dated = await Promise.all(entries.map(async (name) => ({
+      name,
+      modifiedAt: (await stat(join(this.#directory, name))).mtimeMs,
+    })));
+    dated.sort((left, right) => left.modifiedAt - right.modifiedAt);
+    for (const entry of dated.slice(0, dated.length - this.#maxRecords)) {
+      await unlink(join(this.#directory, entry.name));
+    }
   }
 }

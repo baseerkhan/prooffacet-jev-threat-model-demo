@@ -15,7 +15,8 @@ import type { EvaluationRecord, HumanReview } from "./types.js";
 const sourceDirectory = dirname(fileURLToPath(import.meta.url));
 const publicDirectory = join(sourceDirectory, "..", "public");
 const dataDirectory = process.env.PROOFFACET_DATA_DIR || join(process.cwd(), "data");
-const store = new EvaluationStore(dataDirectory);
+const maxRecords = Number(process.env.PROOFFACET_MAX_RECORDS || "250");
+const store = new EvaluationStore(dataDirectory, Number.isFinite(maxRecords) ? maxRecords : 250);
 const deterministicProvider = new DeterministicThreatProvider();
 const port = Number(process.env.PORT || "8787");
 const host = process.env.HOST || "127.0.0.1";
@@ -89,9 +90,17 @@ async function readJson(request: IncomingMessage): Promise<Record<string, unknow
 }
 
 const windows = new Map<string, { count: number; resetAt: number }>();
+const evaluationWindows = new Map<string, { count: number; resetAt: number }>();
+
+function clientAddress(request: IncomingMessage): string {
+  const forwarded = request.headers["x-real-ip"];
+  if (typeof forwarded === "string" && forwarded.length <= 64) return forwarded;
+  return request.socket.remoteAddress || "unknown";
+}
+
 function rateLimited(request: IncomingMessage): boolean {
   const now = Date.now();
-  const key = request.socket.remoteAddress || "unknown";
+  const key = clientAddress(request);
   const current = windows.get(key);
   if (!current || current.resetAt <= now) {
     windows.set(key, { count: 1, resetAt: now + 60_000 });
@@ -99,6 +108,18 @@ function rateLimited(request: IncomingMessage): boolean {
   }
   current.count += 1;
   return current.count > 30;
+}
+
+function evaluationRateLimited(request: IncomingMessage): boolean {
+  const now = Date.now();
+  const key = clientAddress(request);
+  const current = evaluationWindows.get(key);
+  if (!current || current.resetAt <= now) {
+    evaluationWindows.set(key, { count: 1, resetAt: now + 600_000 });
+    return false;
+  }
+  current.count += 1;
+  return current.count > 3;
 }
 
 async function runEvaluation(flowId: string): Promise<EvaluationRecord> {
@@ -180,6 +201,10 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
     });
   }
   if (request.method === "POST" && pathname === "/api/evaluations") {
+    if (evaluationRateLimited(request)) {
+      response.setHeader("Retry-After", "600");
+      return json(response, 429, { error: "Evaluation limit reached. Try again in ten minutes." });
+    }
     const body = await readJson(request);
     if (typeof body.flowId !== "string" || !softwareTwin.flows.some((flow) => flow.id === body.flowId)) {
       return json(response, 400, { error: "Choose a documented SoftwareTwin flow." });
